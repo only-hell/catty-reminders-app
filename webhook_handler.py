@@ -4,14 +4,13 @@ import os
 
 app = Flask(__name__)
 
-@app.route('/', methods=['POST', 'GET'])
-def handle_webhook():
+# Этот декоратор заставит Flask ловить ВСЕ пути (/, /health, /github-webhook и т.д.)
+@app.route('/', defaults={'path': ''}, methods=['POST', 'GET'])
+@app.route('/<path:path>', methods=['POST', 'GET'])
+def handle_webhook(path):
+    print(f"Received request on path: /{path}")
     script_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "deploy.sh")
     subprocess.Popen(["bash", script_path])
-    return "ok", 200
-
-@app.route('/health', methods=['GET'])
-def health():
     return "ok", 200
 
 if __name__ == '__main__':
