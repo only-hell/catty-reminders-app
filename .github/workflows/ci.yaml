@@ -33,6 +33,7 @@ jobs:
       # Шаг 4: Запускаем тесты и сохраняем вывод в файл
       - name: Run tests
         run: |
+          PYTHONPATH=. pytest > test_result.txt
           pytest > test_result.txt
 
       # Шаг 5: Загружаем файл как Артефакт (по заданию)
