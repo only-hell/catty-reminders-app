@@ -1,6 +1,5 @@
 name: CI Pipeline
 
-# Когда запускать: при пуше или создании Pull Request
 on:
   push:
     branches: [ "lab2", "main" ]
@@ -9,37 +8,36 @@ on:
 
 jobs:
   test:
-    # Какой сервер арендуем у GitHub
     runs-on: ubuntu-latest
 
     steps:
-      # Шаг 1: Скачиваем код из репозитория
       - name: Checkout code
         uses: actions/checkout@v4
 
-      # Шаг 2: Устанавливаем Python (мы видели в логах, что у тебя версия 3.13)
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
           python-version: '3.13'
 
-      # Шаг 3: Устанавливаем зависимости
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
           pip install -r requirements.txt
           pip install pytest
 
-      # Шаг 4: Запускаем тесты и сохраняем вывод в файл
+      - name: Prepare environment (Mock .env)
+        run: |
+          # Создаем пустой .env файл, чтобы приложение не падало при попытке его прочитать
+          touch .env
+
       - name: Run tests
         run: |
-          PYTHONPATH=. pytest > test_result.txt
-          pytest > test_result.txt
+          # tee выведет результат тестов прямо в логи GitHub и одновременно сохранит в файл
+          PYTHONPATH=. pytest | tee test_result.txt
 
-      # Шаг 5: Загружаем файл как Артефакт (по заданию)
       - name: Upload test results
         uses: actions/upload-artifact@v4
-        if: always() # Загружаем отчет, даже если тесты упали
+        if: always()
         with:
           name: test_result
           path: test_result.txt
