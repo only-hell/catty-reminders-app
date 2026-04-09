@@ -1,13 +1,14 @@
 #!/bin/bash
-echo "🚀 Начинаем деплой Докер-контейнера..."
+# Если передан аргумент (SHA коммита), используем его. Иначе по умолчанию lab3.
+TAG=${1:-lab3}
+IMAGE="ghcr.io/only-hell/catty-reminders-app"
 
-# 1. Скачиваем свежий образ с Гитхаба (тег lab3)
-docker pull ghcr.io/only-hell/catty-reminders-app:lab3
+echo "🚀 Начинаем деплой Докер-контейнера с тегом $TAG..."
 
-# 2. Останавливаем и удаляем старый контейнер (если он есть)
+docker pull $IMAGE:$TAG
 docker rm -f my-catty-container || true
 
-# 3. Запускаем новый контейнер (с флагом --restart always, как просили в задании)
-docker run -d -p 8182:8181 --restart always --name my-catty-container ghcr.io/only-hell/catty-reminders-app:lab3
+# Пробрасываем SHA как переменную окружения, чтобы сайт знал свою версию
+docker run -d -p 8182:8181 --restart always -e DEPLOY_REF=$TAG -e COMMIT_SHA=$TAG --name my-catty-container $IMAGE:$TAG
 
 echo "✅ Деплой успешно завершен!"

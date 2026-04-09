@@ -12,7 +12,6 @@ jobs:
   deploy:
     runs-on: self-hosted
     if: ${{ github.event_name == 'release' || github.event.workflow_run.conclusion == 'success' }}
-    
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -20,4 +19,5 @@ jobs:
       - name: Execute deployment script
         run: |
           chmod +x ./deploy.sh
-          ./deploy.sh
+          # Передаем SHA коммита внутрь скрипта
+          ./deploy.sh ${{ github.sha }}
