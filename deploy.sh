@@ -1,22 +1,13 @@
-BRANCH=${1:-lab1}
+#!/bin/bash
+echo "🚀 Начинаем деплой Докер-контейнера..."
 
-exec > /home/vboxuser/catty-reminders-app/deploy.log 2>&1
-echo "=== Deploy started at $(date) for branch $BRANCH ==="
+# 1. Скачиваем свежий образ с Гитхаба (тег lab3)
+docker pull ghcr.io/only-hell/catty-reminders-app:lab3
 
-cd /home/vboxuser/catty-reminders-app
-git config --global --add safe.directory /home/vboxuser/catty-reminders-app
+# 2. Останавливаем и удаляем старый контейнер (если он есть)
+docker rm -f my-catty-container || true
 
-git fetch origin
+# 3. Запускаем новый контейнер (с флагом --restart always, как просили в задании)
+docker run -d -p 8182:8181 --restart always --name my-catty-container ghcr.io/only-hell/catty-reminders-app:lab3
 
-git checkout $BRANCH
-git reset --hard origin/$BRANCH
-git pull origin $BRANCH
-
-NEW_HEAD=$(git rev-parse HEAD)
-echo "DEPLOY_REF=$NEW_HEAD" > .env
-
-./build.sh
-./test.sh
-
-sudo systemctl restart catty-app
-echo "=== Deploy finished successfully ==="
+echo "✅ Деплой успешно завершен!"
