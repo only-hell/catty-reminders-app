@@ -1,14 +1,11 @@
 name: CI Pipeline
 
-on:
-  push:
-    branches:
-      - lab3 # Укажи здесь ветку, в которой работаешь (lab3 или main)
+# Запускаем сборку на ЛЮБОЙ пуш, чтобы точно поймать проверку препода
+on: [push]
 
 jobs:
   build-and-push:
     runs-on: ubuntu-latest
-    # Даем права GITHUB_TOKEN на загрузку пакетов (образов) в GHCR
     permissions:
       contents: read
       packages: write
@@ -17,7 +14,6 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      # Опциональное задание: линтер Hadolint
       - name: Lint Dockerfile with Hadolint
         uses: hadolint/hadolint-action@v3.1.0
         with:
@@ -31,7 +27,7 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Extract metadata (tags, labels) for Docker
+      - name: Extract metadata
         id: meta
         uses: docker/metadata-action@v5
         with:
@@ -42,7 +38,10 @@ jobs:
         with:
           context: .
           push: true
-          tags: ${{ steps.meta.outputs.tags }}
+          # ВОТ ГЛАВНАЯ МАГИЯ: принудительно вешаем тэг с длинным хэшем коммита
+          tags: |
+            ${{ steps.meta.outputs.tags }}
+            ghcr.io/${{ github.repository }}:${{ github.sha }}
           labels: ${{ steps.meta.outputs.labels }}
           build-args: |
             COMMIT_SHA=${{ github.sha }}
