@@ -1,0 +1,12 @@
+{
+  "users": {
+    "only-hell": "password"
+  },
+  "db_config": {
+    "host": "db",
+    "user": "user",
+    "password": "password",
+    "database": "reminders"
+  },
+  "secret_key": "super-secret-key"
+}

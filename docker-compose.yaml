@@ -1,24 +1,24 @@
 services:
   db:
-    image: postgres:14
+    image: mysql:8.0
     restart: always
     environment:
-      POSTGRES_USER: user
-      POSTGRES_PASSWORD: password
-      POSTGRES_DB: reminders
+      MYSQL_ROOT_PASSWORD: password
+      MYSQL_DATABASE: reminders
+      MYSQL_USER: user
+      MYSQL_PASSWORD: password
     volumes:
-      - db_data:/var/lib/postgresql/data
+      - db_data:/var/lib/mysql
 
   app:
-    image: ghcr.io/only-hell/catty-reminders-app:${IMAGE_TAG:-lab4}
+    image: ghcr.io/only-hell/catty-reminders-app:lab4-clean
     restart: always
     ports:
       - "8182:8181"
     environment:
-      - DATABASE_URL=postgresql://user:password@db:5432/reminders
+      - DATABASE_URL=mysql://user:password@db:3306/reminders
     depends_on:
       - db
 
 volumes:
   db_data:
-# Production-ready compose for Lab 4
