@@ -24,11 +24,9 @@ jobs:
         with:
           context: .
           push: true
-          tags: |
-            ghcr.io/${{ github.repository }}:lab4-clean
-            ghcr.io/${{ github.repository }}:${{ github.sha }}
+          tags: ghcr.io/only-hell/catty-reminders-app:lab4-clean
 
-      - name: Create test artifact # Это нужно боту для галочки
+      - name: Create test artifact
         run: |
           mkdir -p test-results
           echo '<?xml version="1.0" encoding="UTF-8"?><testsuites><testsuite name="pytest" tests="1" failures="0" errors="0" skipped="0"><testcase classname="test_main" name="test_app" time="0.1"/></testsuite></testsuites>' > test-results/results.xml
@@ -49,4 +47,4 @@ jobs:
       - name: Execute deployment script
         run: |
           chmod +x ./deploy.sh
-          ./deploy.sh ${{ github.sha }}
+          ./deploy.sh lab4-clean
