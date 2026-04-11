@@ -1,13 +1,16 @@
 name: CI/CD Pipeline
 
-on: [push, pull_request]
+on:
+  push:
+    branches: [ "lab4-clean" ]
+
+permissions:
+  contents: read
+  packages: write
 
 jobs:
   build-and-push:
     runs-on: ubuntu-latest
-    permissions:
-      contents: read
-      packages: write
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -24,7 +27,9 @@ jobs:
         with:
           context: .
           push: true
-          tags: ghcr.io/only-hell/catty-reminders-app:lab4-clean
+          tags: |
+            ghcr.io/only-hell/catty-reminders-app:lab4-clean
+            ghcr.io/only-hell/catty-reminders-app:${{ github.sha }}
 
       - name: Create test artifact
         run: |
@@ -47,4 +52,4 @@ jobs:
       - name: Execute deployment script
         run: |
           chmod +x ./deploy.sh
-          ./deploy.sh lab4-clean
+          ./deploy.sh ${{ github.sha }}
