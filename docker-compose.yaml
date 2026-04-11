@@ -14,7 +14,7 @@ services:
     image: ghcr.io/only-hell/catty-reminders-app:lab4-clean
     restart: always
     ports:
-      - "8182:8181"
+      - "8080:8181"
     environment:
       - DATABASE_URL=mysql://user:password@db:3306/reminders
     depends_on:
