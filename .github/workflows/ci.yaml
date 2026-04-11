@@ -1,8 +1,6 @@
 name: CI/CD Pipeline
 
-on:
-  push:
-    branches: [ "lab4-clean" ]
+on: [push, pull_request]
 
 permissions:
   contents: read
@@ -27,7 +25,6 @@ jobs:
         with:
           context: .
           push: true
-          # ТУТ ТВОЙ ЛОГИН И ДВА ТЕГА (общий и уникальный для бота)
           tags: |
             ghcr.io/only-hell/catty-reminders-app:lab4-clean
             ghcr.io/only-hell/catty-reminders-app:${{ github.sha }}
