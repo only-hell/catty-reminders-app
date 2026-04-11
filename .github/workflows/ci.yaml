@@ -1,6 +1,8 @@
 name: CI/CD Pipeline
 
-on: [push, pull_request]
+on:
+  push:
+    branches: [ "lab4-clean" ]
 
 permissions:
   contents: read
@@ -26,8 +28,8 @@ jobs:
           context: .
           push: true
           tags: |
-            ghcr.io/only-hell/catty-reminders-app:lab4-clean
-            ghcr.io/only-hell/catty-reminders-app:${{ github.sha }}
+            ghcr.io/only-hell/catty-final:lab4-clean
+            ghcr.io/only-hell/catty-final:${{ github.sha }}
 
       - name: Create test artifact
         run: |
