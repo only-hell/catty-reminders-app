@@ -76,8 +76,17 @@ class MySQLStorage:
 
     def _create_tables(self):
         TABLES = {}
+        # Вот эта таблица критически важна для работы логина!
+        TABLES['users'] = (
+            "CREATE TABLE IF NOT EXISTS `users` ("
+            "  `id` int(11) NOT NULL AUTO_INCREMENT,"
+            "  `username` varchar(255) NOT NULL UNIQUE,"
+            "  `password` varchar(255) NOT NULL,"
+            "  PRIMARY KEY (`id`)"
+            ") ENGINE=InnoDB")
+
         TABLES['reminder_lists'] = (
-            "CREATE TABLE `reminder_lists` ("
+            "CREATE TABLE IF NOT EXISTS `reminder_lists` ("
             "  `id` int(11) NOT NULL AUTO_INCREMENT,"
             "  `owner` varchar(255) NOT NULL,"
             "  `name` varchar(255) NOT NULL,"
@@ -85,7 +94,7 @@ class MySQLStorage:
             ") ENGINE=InnoDB")
 
         TABLES['reminder_items'] = (
-            "CREATE TABLE `reminder_items` ("
+            "CREATE TABLE IF NOT EXISTS `reminder_items` ("
             "  `id` int(11) NOT NULL AUTO_INCREMENT,"
             "  `list_id` int(11) NOT NULL,"
             "  `description` text NOT NULL,"
@@ -95,7 +104,7 @@ class MySQLStorage:
             ") ENGINE=InnoDB")
 
         TABLES['selected_lists'] = (
-            "CREATE TABLE `selected_lists` ("
+            "CREATE TABLE IF NOT EXISTS `selected_lists` ("
             "  `owner` varchar(255) NOT NULL,"
             "  `list_id` int(11),"
             "  PRIMARY KEY (`owner`),"
