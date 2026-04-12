@@ -1,3 +1,4 @@
+# Финальная попытка: метка времени 12-04-2026
 name: CI/CD Pipeline
 
 on:
@@ -28,8 +29,8 @@ jobs:
           context: .
           push: true
           tags: |
-            ghcr.io/only-hell/catty-final:lab4-clean
-            ghcr.io/only-hell/catty-final:${{ github.sha }}
+            ghcr.io/only-hell/catty-final-v2:lab4-clean
+            ghcr.io/only-hell/catty-final-v2:${{ github.sha }}
 
       - name: Create test artifact
         run: |

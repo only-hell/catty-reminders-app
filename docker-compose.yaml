@@ -11,7 +11,7 @@ services:
       - db_data:/var/lib/mysql
 
   app:
-    image: ghcr.io/only-hell/catty-final:lab4-clean
+    image: ghcr.io/only-hell/catty-final-v2:lab4-clean
     restart: always
     ports:
       - "8080:8181"
