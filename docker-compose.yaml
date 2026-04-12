@@ -1,24 +1,24 @@
+version: '3.8'
 services:
-  db:
-    image: mysql:8.0
-    restart: always
-    environment:
-      MYSQL_ROOT_PASSWORD: password
-      MYSQL_DATABASE: reminders
-      MYSQL_USER: user
-      MYSQL_PASSWORD: password
-    volumes:
-      - db_data:/var/lib/mysql
-
   app:
-    image: ghcr.io/only-hell/catty-final-v2:lab4-clean
-    restart: always
+    image: ghcr.io/only-hell/catty-reminders-app:${IMAGE_TAG:-latest}
     ports:
       - "8080:8181"
     environment:
-      - DATABASE_URL=mysql://user:password@db:3306/reminders
+      - DATABASE_URL=mysql+mysqlconnector://user:password@db/reminders
+      - DEPLOY_REF=${IMAGE_TAG:-NA}
     depends_on:
       - db
+
+  db:
+    image: mysql:8.0
+    environment:
+      - MYSQL_ROOT_PASSWORD=password
+      - MYSQL_DATABASE=reminders
+      - MYSQL_USER=user
+      - MYSQL_PASSWORD=password
+    volumes:
+      - db_data:/var/lib/mysql
 
 volumes:
   db_data:
