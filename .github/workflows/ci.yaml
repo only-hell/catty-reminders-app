@@ -25,10 +25,9 @@ jobs:
         with:
           context: .
           push: true
-          # Используем lowercase, чтобы Гитхаб не ругался на регистр
           tags: |
-            ghcr.io/${{ github.repository }}:lab4-clean
-            ghcr.io/${{ github.repository }}:${{ github.sha }}
+            ghcr.io/only-hell/catty-reminders-app:lab4-clean
+            ghcr.io/only-hell/catty-reminders-app:${{ github.sha }}
 
       - name: Create test artifact
         run: |
