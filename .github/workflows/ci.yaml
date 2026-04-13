@@ -17,10 +17,17 @@ jobs:
         with:
           python-version: '3.12'
       - name: Install dependencies
-        run: pip install -r requirements.txt pytest mysql-connector-python
+        run: |
+          pip install -r requirements.txt pytest mysql-connector-python
+          playwright install --with-deps chromium
+      - name: Run app in background
+        run: |
+          export PYTHONPATH=.
+          export DATABASE_URL=mysql+mysqlconnector://root:password@127.0.0.1:3306/reminders
+          nohup uvicorn app.main:app --port 8181 > app.log 2>&1 &
+          sleep 10 # Ждем пока приложение поднимется
       - name: Run tests
         run: |
-          # Экспортируем путь к проекту, чтобы импорты из папок testlib и app работали
           export PYTHONPATH=.
           export DATABASE_URL=mysql+mysqlconnector://root:password@127.0.0.1:3306/reminders
           pytest --junitxml=results.xml
