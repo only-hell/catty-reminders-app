@@ -16,7 +16,7 @@ IMAGE="ghcr.io/only-hell/catty-reminders-app:${COMMIT_SHA}"
 echo "📦 Сборка Docker-образа: $IMAGE"
 docker build --build-arg COMMIT_SHA=$COMMIT_SHA -t $IMAGE .
 
-# Создаем дополнительный тег latest (его тоже ищет бот)
+# Создаем дополнительный тег latest (егоD тоже ищет бот)
 docker tag $IMAGE ghcr.io/only-hell/catty-reminders-app:latest
 
 echo "🧹 Удаление старого контейнера..."
