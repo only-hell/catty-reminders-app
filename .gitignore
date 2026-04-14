@@ -1,0 +1,4 @@
+
+deploy.log
+__pycache__/
+*.pyc
