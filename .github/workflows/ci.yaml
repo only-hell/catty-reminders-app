@@ -30,27 +30,3 @@ jobs:
         with:
           name: test_result
           path: results.xml
-
-  build-and-push:
-    needs: test
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - name: Log in to GHCR
-        # Авторизуемся ТОЛЬКО при пуше (в своем репозитории)
-        if: github.event_name == 'push'
-        uses: docker/login-action@v3
-        with:
-          registry: ghcr.io
-          username: ${{ github.actor }}
-          password: ${{ secrets.PAT_TOKEN }}
-      - name: Build and push
-        uses: docker/build-push-action@v5
-        with:
-          context: .
-          # Пушим образ в GHCR ТОЛЬКО при пуше (при PR делаем просто dry-run)
-          push: ${{ github.event_name == 'push' }}
-          tags: |
-            ghcr.io/only-hell/catty-reminders-app:latest
-            ghcr.io/only-hell/catty-reminders-app:${{ github.sha }}
-            

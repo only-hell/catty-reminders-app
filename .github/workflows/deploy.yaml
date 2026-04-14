@@ -22,7 +22,9 @@ jobs:
           script: |
             cd /home/vboxuser/catty-reminders-app
             git fetch --all
-            # Переключаемся на конкретный SHA, который прислал бот
+            # ЖЕСТКО сбрасываем измененный .env, чтобы git checkout не падал!
+            git reset --hard
+            git clean -fd
             git checkout ${{ github.sha }}
             chmod +x deploy.sh
             ./deploy.sh ${{ github.sha }}
