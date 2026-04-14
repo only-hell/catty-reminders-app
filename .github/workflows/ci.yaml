@@ -59,11 +59,12 @@ jobs:
         uses: docker/metadata-action@v5
         with:
           images: ghcr.io/${{ github.repository }}
-      - name: Build and push Docker image
+      - name: Build Docker image
         uses: docker/build-push-action@v5
         with:
           context: .
-          push: true
+          # Вот здесь мы выключаем пуш в реестр, чтобы избежать ошибки прав
+          push: false
           tags: |
             ${{ steps.meta.outputs.tags }}
             ghcr.io/${{ github.repository }}:${{ github.sha }}
