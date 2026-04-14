@@ -1,18 +1,17 @@
 name: CD Pipeline
 on:
-  workflow_run:
-    workflows:["CI Pipeline"]
-    types:
-      - completed
+  push:
+    branches: [ "lab3" ]
   release:
     types: [published, created]
+
 jobs:
   deploy:
     runs-on: ubuntu-latest
-    if: ${{ github.event_name == 'release' || github.event.workflow_run.conclusion == 'success' }}
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
+
       - name: Deploy via SSH
         uses: appleboy/ssh-action@master
         with:
@@ -23,8 +22,7 @@ jobs:
           script: |
             cd /home/vboxuser/catty-reminders-app
             git fetch --all
-            git reset --hard origin/lab3
+            # Переключаемся на конкретный SHA, который прислал бот
             git checkout ${{ github.sha }}
             chmod +x deploy.sh
             ./deploy.sh ${{ github.sha }}
-            
