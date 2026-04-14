@@ -1,5 +1,5 @@
 name: CI Pipeline
-on:[push, pull_request]
+on: [push, pull_request]
 
 jobs:
   test:
@@ -62,5 +62,3 @@ jobs:
           tags: |
             ghcr.io/only-hell/catty-reminders-app:latest
             ghcr.io/only-hell/catty-reminders-app:${{ github.sha }}
-          build-args: |
-            COMMIT_SHA=${{ github.sha }}
