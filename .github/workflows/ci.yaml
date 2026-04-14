@@ -1,5 +1,5 @@
 name: CI Pipeline
-on: [push, pull_request]
+on:[push, pull_request]
 
 jobs:
   test:
@@ -42,23 +42,8 @@ jobs:
   build-and-push:
     needs: test
     runs-on: ubuntu-latest
-    permissions:
-      contents: read
-      packages: write
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
-      - name: Log in to GHCR
-        uses: docker/login-action@v3
-        with:
-          registry: ghcr.io
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
-      - name: Build and push Docker image
-        uses: docker/build-push-action@v5
-        with:
-          context: .
-          push: true
-          tags: |
-            ghcr.io/only-hell/catty-reminders-app:latest
-            ghcr.io/only-hell/catty-reminders-app:${{ github.sha }}
+      - name: Build Docker image (dry run)
+        run: docker build .
