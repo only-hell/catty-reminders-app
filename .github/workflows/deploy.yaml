@@ -1,5 +1,4 @@
 name: CD Pipeline
-
 on:
   workflow_run:
     workflows: ["CI Pipeline"]
@@ -7,17 +6,24 @@ on:
       - completed
   release:
     types: [published, created]
-
 jobs:
   deploy:
-    runs-on: self-hosted
+    runs-on: ubuntu-latest
     if: ${{ github.event_name == 'release' || github.event.workflow_run.conclusion == 'success' }}
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
-
-      - name: Execute deployment script
-        run: |
-          chmod +x ./deploy.sh
-          # Передаем SHA коммита внутрь скрипта
-          ./deploy.sh ${{ github.sha }}
+      - name: Deploy via SSH
+        uses: appleboy/ssh-action@master
+        with:
+          host: course.prafdin.ru
+          port: 2288
+          username: vboxuser
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          script: |
+            set -x
+            cd /home/vboxuser/catty-reminders-app
+            git fetch --all
+            git checkout ${{ github.sha }}
+            chmod +x deploy.sh
+            ./deploy.sh ${{ github.sha }}

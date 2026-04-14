@@ -1,14 +1,22 @@
 #!/bin/bash
-# Если передан аргумент (SHA коммита), используем его. Иначе по умолчанию lab3.
-TAG=${1:-lab3}
-IMAGE="ghcr.io/only-hell/catty-reminders-app"
+cd /home/vboxuser/catty-reminders-app
 
-echo "🚀 Начинаем деплой Докер-контейнера с тегом $TAG..."
+COMMIT_SHA=$1
+if[ -z "$COMMIT_SHA" ]; then
+  COMMIT_SHA=$(git rev-parse HEAD)
+fi
+echo "DEPLOY_REF=$COMMIT_SHA" > .env
 
-docker pull $IMAGE:$TAG
-docker rm -f my-catty-container || true
+IMAGE="ghcr.io/only-hell/catty-reminders-app:${COMMIT_SHA}"
+echo "🚀 Pulling image: $IMAGE"
+docker pull $IMAGE
 
-# Пробрасываем SHA как переменную окружения, чтобы сайт знал свою версию
-docker run -d -p 8182:8181 --restart always -e DEPLOY_REF=$TAG -e COMMIT_SHA=$TAG --name my-catty-container $IMAGE:$TAG
+# Убиваем старый контейнер
+docker rm -f lab3-app 2>/dev/null || true
 
-echo "✅ Деплой успешно завершен!"
+# Запускаем новый, пробрасывая файл config.json внутрь
+echo "🚀 Starting container..."
+docker run -d --name lab3-app --restart always -p 8181:8181 \
+  -v /home/vboxuser/catty-reminders-app/config.json:/app/config.json \
+  --env-file .env \
+  $IMAGE

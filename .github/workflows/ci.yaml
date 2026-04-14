@@ -1,5 +1,5 @@
 name: CI Pipeline
-on: [push, pull_request]
+on:[push, pull_request]
 
 jobs:
   test:
@@ -48,26 +48,17 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
-      - name: Log in to the Container registry
+      - name: Log in to GHCR
         uses: docker/login-action@v3
         with:
           registry: ghcr.io
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
-      - name: Extract metadata
-        id: meta
-        uses: docker/metadata-action@v5
-        with:
-          images: ghcr.io/${{ github.repository }}
-      - name: Build Docker image
+      - name: Build and push Docker image
         uses: docker/build-push-action@v5
         with:
           context: .
-          # Вот здесь мы выключаем пуш в реестр, чтобы избежать ошибки прав
-          push: false
+          push: true
           tags: |
-            ${{ steps.meta.outputs.tags }}
-            ghcr.io/${{ github.repository }}:${{ github.sha }}
-          labels: ${{ steps.meta.outputs.labels }}
-          build-args: |
-            COMMIT_SHA=${{ github.sha }}
+            ghcr.io/only-hell/catty-reminders-app:latest
+            ghcr.io/only-hell/catty-reminders-app:${{ github.sha }}
