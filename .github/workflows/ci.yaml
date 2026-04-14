@@ -35,9 +35,10 @@ jobs:
     needs: test
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
       - name: Log in to GHCR
+        # Авторизуемся ТОЛЬКО при пуше (в своем репозитории)
+        if: github.event_name == 'push'
         uses: docker/login-action@v3
         with:
           registry: ghcr.io
@@ -47,9 +48,9 @@ jobs:
         uses: docker/build-push-action@v5
         with:
           context: .
-          push: true
+          # Пушим образ в GHCR ТОЛЬКО при пуше (при PR делаем просто dry-run)
+          push: ${{ github.event_name == 'push' }}
           tags: |
             ghcr.io/only-hell/catty-reminders-app:latest
             ghcr.io/only-hell/catty-reminders-app:${{ github.sha }}
-          build-args: |
-            COMMIT_SHA=${{ github.sha }}
+            
