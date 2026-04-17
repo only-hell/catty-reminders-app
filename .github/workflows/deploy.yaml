@@ -9,8 +9,6 @@ jobs:
   deploy:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
       - name: Deploy via SSH
         uses: appleboy/ssh-action@master
         with:
@@ -19,11 +17,17 @@ jobs:
           username: vboxuser
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           script: |
-            cd /home/vboxuser/catty-reminders-app
-            git config --global --add safe.directory /home/vboxuser/catty-reminders-app
-            git fetch --all
-            git reset --hard origin/lab3
-            git clean -fd
-            git checkout -f ${{ github.sha }}
-            chmod +x deploy.sh
-            ./deploy.sh ${{ github.sha }}
+            # Переменные
+            IMAGE="ghcr.io/${{ github.repository_owner }}/catty-reminders-app:${{ github.sha }}"
+            
+            echo "🔐 Logging in to GHCR..."
+            echo "${{ secrets.PAT_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
+            
+            echo "📦 Pulling and starting..."
+            docker pull $IMAGE
+            docker rm -f lab3-app 2>/dev/null || true
+            sudo fuser -k 8181/tcp 2>/dev/null || true
+            
+            docker run -d --name lab3-app --restart always -p 8181:8181 -e DEPLOY_REF=${{ github.sha }} $IMAGE
+            
+            echo "✅ Nuclear Deploy Finished"

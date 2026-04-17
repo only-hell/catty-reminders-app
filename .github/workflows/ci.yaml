@@ -1,6 +1,10 @@
 name: CI Pipeline
 on: [push, pull_request]
 
+permissions:
+  contents: read
+  packages: write
+
 jobs:
   test:
     runs-on: ubuntu-latest
@@ -20,11 +24,11 @@ jobs:
           python-version: '3.12'
       - name: Install dependencies
         run: pip install -r requirements.txt pytest mysql-connector-python
-      - name: Run unit tests
+      - name: Run real unit tests
         run: |
           export PYTHONPATH=.
           export DATABASE_URL=mysql+mysqlconnector://root:password@127.0.0.1:3306/reminders
-          pytest tests/test_unit.py --junitxml=results.xml || true
+          pytest tests/test_unit.py --junitxml=results.xml
       - name: Upload test results
         uses: actions/upload-artifact@v4
         if: always()
@@ -32,10 +36,25 @@ jobs:
           name: test_result
           path: results.xml
 
-  build-check:
+  build-and-push:
     needs: test
     runs-on: ubuntu-latest
+    if: github.event_name == 'push'
     steps:
       - uses: actions/checkout@v4
-      - name: Build Docker image (Check)
-        run: docker build .
+      - name: Log in to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.PAT_TOKEN }}
+      - name: Build and push
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          push: true
+          # Используем github.sha для уникальности и latest для бота
+          tags: |
+            ghcr.io/${{ github.repository_owner }}/catty-reminders-app:latest
+            ghcr.io/${{ github.repository_owner }}/catty-reminders-app:${{ github.sha }}
+          build-args: COMMIT_SHA=${{ github.sha }}
