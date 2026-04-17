@@ -1,0 +1,47 @@
+name: Lab 3 Monolith
+on:
+  push:
+    branches: [ "lab3*" ]
+
+jobs:
+  test-and-deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt pytest mysql-connector-python
+
+      - name: Run Real Tests
+        run: |
+          export PYTHONPATH=.
+          # Создаем фейковую БД в памяти для тестов, чтобы они прошли в облаке
+          pytest tests/test_unit.py --junitxml=results.xml
+
+      - name: Upload results artifact
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: test_result
+          path: results.xml
+
+      - name: Deploy via SSH (Build on VM)
+        uses: appleboy/ssh-action@master
+        with:
+          host: course.prafdin.ru
+          port: 2288
+          username: vboxuser
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          script: |
+            cd /home/vboxuser/catty-reminders-app
+            git config --global --add safe.directory /home/vboxuser/catty-reminders-app
+            git fetch origin
+            git reset --hard origin/lab3
+            git clean -fd
+            chmod +x deploy.sh
+            ./deploy.sh ${{ github.sha }}

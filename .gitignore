@@ -1,4 +1,6 @@
-
-deploy.log
 __pycache__/
 *.pyc
+.env
+deploy.log
+results.xml
+.idea/
