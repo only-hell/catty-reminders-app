@@ -1,5 +1,5 @@
 name: CI Pipeline
-on:[push, pull_request]
+on: [push, pull_request]
 
 jobs:
   test:
@@ -14,7 +14,6 @@ jobs:
       - name: Run unit tests
         run: |
           export PYTHONPATH=.
-          # Запускаем тесты, но не даем им обрушить CI при ошибке!
           pytest tests/test_unit.py --junitxml=results.xml || true
       - name: Upload test results
         uses: actions/upload-artifact@v4
