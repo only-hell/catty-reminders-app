@@ -14,12 +14,13 @@ jobs:
           - 3306:3306
     steps:
       - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
+      - name: Set up Python
+        uses: actions/setup-python@v5
         with:
           python-version: '3.12'
       - name: Install dependencies
         run: pip install -r requirements.txt pytest mysql-connector-python
-      - name: Run real unit tests
+      - name: Run unit tests
         run: |
           export PYTHONPATH=.
           export DATABASE_URL=mysql+mysqlconnector://root:password@127.0.0.1:3306/reminders
