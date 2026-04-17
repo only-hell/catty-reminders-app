@@ -20,10 +20,12 @@ jobs:
           username: vboxuser
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           script: |
+            git config --global --add safe.directory /home/vboxuser/catty-reminders-app
             cd /home/vboxuser/catty-reminders-app
             git fetch --all
             git reset --hard origin/lab3
             git clean -fd
             git checkout ${{ github.sha }}
             chmod +x deploy.sh
-            ./deploy.sh ${{ github.sha }}
+            # Передаем токен в скрипт, чтобы виртуалка могла скачать образ!
+            ./deploy.sh ${{ github.sha }} ${{ github.actor }} ${{ secrets.PAT_TOKEN }}
