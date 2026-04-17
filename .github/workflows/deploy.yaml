@@ -1,7 +1,9 @@
 name: CD Pipeline
 on:
   push:
-    branches: [ "lab3" ]
+    branches: [ "lab3*" ]
+  release:
+    types: [published, created]
 
 jobs:
   deploy:
@@ -19,7 +21,9 @@ jobs:
           script: |
             cd /home/vboxuser/catty-reminders-app
             git config --global --add safe.directory /home/vboxuser/catty-reminders-app
-            git fetch origin lab3
-            git reset --hard origin/lab3
+            # Выкачиваем конкретный коммит бота
+            git fetch origin ${{ github.sha }}
+            git reset --hard FETCH_HEAD
+            git clean -fd
             chmod +x deploy.sh
             ./deploy.sh ${{ github.sha }}
