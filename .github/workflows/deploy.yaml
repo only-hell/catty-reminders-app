@@ -21,9 +21,9 @@ jobs:
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           script: |
             cd /home/vboxuser/catty-reminders-app
+            git config --global --add safe.directory /home/vboxuser/catty-reminders-app
             git fetch --all
-            # ЖЕСТКО сбрасываем измененный .env, чтобы git checkout не падал!
-            git reset --hard
+            git reset --hard origin/lab3
             git clean -fd
             git checkout ${{ github.sha }}
             chmod +x deploy.sh
