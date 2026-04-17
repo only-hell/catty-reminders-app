@@ -23,9 +23,8 @@ jobs:
             git config --global --add safe.directory /home/vboxuser/catty-reminders-app
             cd /home/vboxuser/catty-reminders-app
             git fetch --all
-            git reset --hard origin/lab3
+            git restore . || true
             git clean -fd
             git checkout ${{ github.sha }}
             chmod +x deploy.sh
-            # Передаем токен в скрипт, чтобы виртуалка могла скачать образ!
-            ./deploy.sh ${{ github.sha }} ${{ github.actor }} ${{ secrets.PAT_TOKEN }}
+            ./deploy.sh ${{ github.sha }}
