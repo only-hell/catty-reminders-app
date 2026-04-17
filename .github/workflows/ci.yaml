@@ -1,28 +1,19 @@
 name: CI Pipeline
-on: [push]
+on: [push, pull_request]
 
 jobs:
   test:
     runs-on: ubuntu-latest
-    services:
-      db:
-        image: mysql:8.0
-        env:
-          MYSQL_ROOT_PASSWORD: password
-          MYSQL_DATABASE: reminders
-        ports:
-          - 3306:3306
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
         with:
           python-version: '3.12'
       - name: Install dependencies
-        run: pip install -r requirements.txt pytest mysql-connector-python
+        run: pip install -r requirements.txt pytest
       - name: Run unit tests
         run: |
           export PYTHONPATH=.
-          export DATABASE_URL=mysql+mysqlconnector://root:password@127.0.0.1:3306/reminders
           pytest tests/test_unit.py --junitxml=results.xml || true
       - name: Upload test results
         uses: actions/upload-artifact@v4
@@ -31,37 +22,10 @@ jobs:
           name: test_result
           path: results.xml
 
-  build-and-push:
+  build-check:
     needs: test
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      
-      - name: 🕵️‍♂️ DEBUG PAT_TOKEN
-        run: |
-          if [ -z "$MY_SECRET" ]; then
-            echo "::error::ОШИБКА! Секрет PAT_TOKEN абсолютно пустой! GitHub его не видит."
-            echo "Проверь: Settings -> Secrets and variables -> Actions -> Repository secrets"
-            exit 1
-          else
-            echo "✅ Секрет найден! Его длина: ${#MY_SECRET} символов."
-          fi
-        env:
-          MY_SECRET: ${{ secrets.PAT_TOKEN }}
-
-      - name: Log in to GHCR
-        uses: docker/login-action@v3
-        with:
-          registry: ghcr.io
-          username: ${{ github.actor }}
-          password: ${{ secrets.PAT_TOKEN }}
-          
-      - name: Build and push Docker image
-        uses: docker/build-push-action@v5
-        with:
-          context: .
-          push: true
-          tags: |
-            ghcr.io/only-hell/catty-reminders-app:latest
-            ghcr.io/only-hell/catty-reminders-app:${{ github.sha }}
-          build-args: COMMIT_SHA=${{ github.sha }}
+      - name: Build Docker image (Dry run)
+        run: docker build .

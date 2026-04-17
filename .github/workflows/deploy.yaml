@@ -9,9 +9,6 @@ jobs:
   deploy:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
       - name: Deploy via SSH
         uses: appleboy/ssh-action@master
         with:
@@ -22,9 +19,9 @@ jobs:
           script: |
             git config --global --add safe.directory /home/vboxuser/catty-reminders-app
             cd /home/vboxuser/catty-reminders-app
-            git fetch --all
-            git restore . || true
+            # Жестко выкачиваем именно тот коммит, который просит GitHub!
+            git fetch origin ${{ github.sha }}
+            git reset --hard FETCH_HEAD
             git clean -fd
-            git checkout ${{ github.sha }}
             chmod +x deploy.sh
             ./deploy.sh ${{ github.sha }}

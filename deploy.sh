@@ -9,15 +9,15 @@ fi
 echo "DEPLOY_REF=$COMMIT_SHA" > .env
 IMAGE="ghcr.io/only-hell/catty-reminders-app:${COMMIT_SHA}"
 
-echo "🚀 Building image locally (bypassing GHCR auth restrictions)..."
+echo "🚀 Собираем образ локально (чтобы бот его увидел)..."
 docker build --build-arg COMMIT_SHA=$COMMIT_SHA -t $IMAGE .
 docker tag $IMAGE ghcr.io/only-hell/catty-reminders-app:latest
 
-echo "🧹 Removing old containers and freeing port 8181..."
+echo "🧹 Убиваем старье..."
 docker rm -f lab3-app 2>/dev/null || true
 sudo fuser -k 8181/tcp 2>/dev/null || true
 
-echo "🚀 Starting new container..."
+echo "🚀 Запускаем..."
 docker run -d --name lab3-app --restart always -p 8181:8181 \
   -v /home/vboxuser/catty-reminders-app/config.json:/app/config.json \
   --env-file .env \
