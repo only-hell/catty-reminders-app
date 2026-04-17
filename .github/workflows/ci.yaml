@@ -1,41 +1,66 @@
 name: CI Pipeline
-on: [push, pull_request]
+
+on:
+  push:
+    branches:
+      - "lab3*"
+  pull_request:
 
 jobs:
   test:
     runs-on: ubuntu-latest
-    services:
-      db:
-        image: mysql:8.0
-        env:
-          MYSQL_ROOT_PASSWORD: password
-          MYSQL_DATABASE: reminders
-        ports:
-          - 3306:3306
     steps:
       - uses: actions/checkout@v4
+
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
           python-version: '3.12'
+
       - name: Install dependencies
-        run: pip install -r requirements.txt pytest mysql-connector-python
-      - name: Run real unit tests
+        run: pip install -r requirements.txt pytest
+
+      - name: Create config.json for app
+        run: |
+          cat > config.json << 'EOF'
+          {
+            "db_path": "reminder_db.json",
+            "secret_key": "Cats are awesome!",
+            "users": {
+              "heisenberg": "P@ssw0rd",
+              "tester": "foobar123"
+            }
+          }
+          EOF
+
+      - name: Create inputs.json for tests
+        run: |
+          cat > inputs.json << 'EOF'
+          {
+            "base_url": "http://localhost:8181",
+            "users": [
+              {
+                "username": "heisenberg",
+                "password": "P@ssw0rd"
+              },
+              {
+                "username": "tester",
+                "password": "foobar123"
+              }
+            ]
+          }
+          EOF
+
+      - name: Run unit tests
         run: |
           export PYTHONPATH=.
-          export DATABASE_URL=mysql+mysqlconnector://root:password@127.0.0.1:3306/reminders
-          pytest tests/test_unit.py --junitxml=results.xml
+          pytest tests/test_unit.py --junitxml=results.xml -v
+
       - name: Upload test results
         uses: actions/upload-artifact@v4
         if: always()
         with:
-          name: test_result
+          name: test-results
           path: results.xml
 
-  build-check:
-    needs: test
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - name: Build Docker image (Check)
-        run: docker build .
+  build-check
