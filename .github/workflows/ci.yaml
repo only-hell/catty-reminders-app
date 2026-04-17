@@ -25,7 +25,7 @@ jobs:
           export PYTHONPATH=.
           export DATABASE_URL=mysql+mysqlconnector://root:password@127.0.0.1:3306/reminders
           pytest tests/test_unit.py --junitxml=results.xml || true
-      - name: Upload results
+      - name: Upload test results
         uses: actions/upload-artifact@v4
         if: always()
         with:
