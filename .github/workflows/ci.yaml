@@ -1,5 +1,4 @@
 name: CI Pipeline
-# Оставили только push, чтобы избежать ошибки с секретами!
 on: [push]
 
 jobs:
@@ -37,12 +36,26 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+      
+      - name: 🕵️‍♂️ DEBUG PAT_TOKEN
+        run: |
+          if [ -z "$MY_SECRET" ]; then
+            echo "::error::ОШИБКА! Секрет PAT_TOKEN абсолютно пустой! GitHub его не видит."
+            echo "Проверь: Settings -> Secrets and variables -> Actions -> Repository secrets"
+            exit 1
+          else
+            echo "✅ Секрет найден! Его длина: ${#MY_SECRET} символов."
+          fi
+        env:
+          MY_SECRET: ${{ secrets.PAT_TOKEN }}
+
       - name: Log in to GHCR
         uses: docker/login-action@v3
         with:
           registry: ghcr.io
           username: ${{ github.actor }}
           password: ${{ secrets.PAT_TOKEN }}
+          
       - name: Build and push Docker image
         uses: docker/build-push-action@v5
         with:
