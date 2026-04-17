@@ -22,8 +22,6 @@ jobs:
             cd /home/vboxuser/catty-reminders-app
             git config --global --add safe.directory /home/vboxuser/catty-reminders-app
             git fetch --all
-            git reset --hard origin/lab3
-            git clean -fd
+            git checkout -f ${{ github.sha }}
             chmod +x deploy.sh
-            # Передаем PAT_TOKEN в скрипт
-            ./deploy.sh ${{ github.sha }} ${{ github.actor }} ${{ secrets.PAT_TOKEN }}
+            ./deploy.sh ${{ github.sha }}
