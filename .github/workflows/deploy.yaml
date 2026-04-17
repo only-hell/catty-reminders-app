@@ -1,0 +1,28 @@
+name: CD Pipeline
+on:
+  push:
+    branches: [ "lab3" ]
+  release:
+    types: [published, created]
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      - name: Deploy via SSH
+        uses: appleboy/ssh-action@master
+        with:
+          host: course.prafdin.ru
+          port: 2288
+          username: vboxuser
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          script: |
+            cd /home/vboxuser/catty-reminders-app
+            git config --global --add safe.directory /home/vboxuser/catty-reminders-app
+            git fetch origin
+            git reset --hard origin/lab3
+            git clean -fd
+            chmod +x deploy.sh
+            ./deploy.sh ${{ github.sha }}
