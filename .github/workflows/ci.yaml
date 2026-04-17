@@ -45,3 +45,4 @@ jobs:
             ghcr.io/${{ github.repository_owner }}/catty-reminders-app:latest
             ghcr.io/${{ github.repository_owner }}/catty-reminders-app:${{ github.sha }}
           build-args: COMMIT_SHA=${{ github.sha }}
+ 
