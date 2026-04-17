@@ -9,9 +9,8 @@ fi
 echo "DEPLOY_REF=$COMMIT_SHA" > .env
 IMAGE="ghcr.io/only-hell/catty-reminders-app:${COMMIT_SHA}"
 
-echo "🚀 Building image locally to bypass GHCR limits..."
-docker build --build-arg COMMIT_SHA=$COMMIT_SHA -t $IMAGE .
-docker tag $IMAGE ghcr.io/only-hell/catty-reminders-app:latest
+echo "🚀 Pulling image from GHCR..."
+docker pull $IMAGE
 
 echo "🧹 Removing old container..."
 docker rm -f lab3-app 2>/dev/null || true
@@ -21,5 +20,3 @@ docker run -d --name lab3-app --restart always -p 8181:8181 \
   -v /home/vboxuser/catty-reminders-app/config.json:/app/config.json \
   --env-file .env \
   $IMAGE
-
-echo "✅ Deployment successful!"

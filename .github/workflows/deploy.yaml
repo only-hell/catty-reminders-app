@@ -21,7 +21,6 @@ jobs:
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           script: |
             cd /home/vboxuser/catty-reminders-app
-            git config --global --add safe.directory /home/vboxuser/catty-reminders-app
             git fetch --all
             git reset --hard origin/lab3
             git clean -fd
