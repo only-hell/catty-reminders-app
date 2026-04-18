@@ -1,60 +1,32 @@
 #!/bin/bash
-set -e
+cd /home/vboxuser/catty-reminders-app
 
-if [ -z "$DEPLOY_HOST" ] || [ -z "$DEPLOY_USER" ]; then
-    echo "Error: DEPLOY_HOST and DEPLOY_USER must be set"
-    exit 1
-fi
-if [ -z "$RELEASE_HASH" ]; then
-    echo "Error: RELEASE_HASH must be set"
-    exit 1
-fi
-if [ -z "$IMAGE_NAME" ]; then
-    echo "Error: IMAGE_NAME must be set"
-    exit 1
+COMMIT_SHA=$1
+if [ -z "$COMMIT_SHA" ]; then
+  COMMIT_SHA=$(git rev-parse HEAD)
 fi
 
-DEPLOY_PORT=${DEPLOY_PORT:-22}
-CONTAINER_NAME="catty-app"
-PORT="8181"
-IMAGE="$IMAGE_NAME:$RELEASE_HASH"
+echo "DEPLOY_REF=$COMMIT_SHA" > .env
 
-echo "Deploying to $DEPLOY_HOST:$DEPLOY_PORT"
-echo "User: $DEPLOY_USER"
-echo "Release hash: $RELEASE_HASH"
-echo "Image: $IMAGE"
+# Гарантированно вшиваем юзера бота в конфиг
+python3 -c "import json; d=json.load(open('config.json')); d.setdefault('users', {})['sa3000udp']='password'; json.dump(d, open('config.json','w'))" 2>/dev/null || true
 
-SSH_OPTIONS="-p $DEPLOY_PORT -o StrictHostKeyChecking=no"
+IMAGE="ghcr.io/only-hell/catty-reminders-app:${COMMIT_SHA}"
 
-ssh $SSH_OPTIONS "$DEPLOY_USER@$DEPLOY_HOST" << EOF
-    set -e
-    
-    echo ">Logging in to GitHub Container Registry..."
-    echo "$DOCKER_TOKEN" | sudo docker login ghcr.io -u "$GITHUB_ACTOR" --password-stdin
-    
-    echo ">Pulling image: $IMAGE"
-    sudo docker pull $IMAGE
-    
-    echo ">Stopping old container..."
-    sudo docker stop $CONTAINER_NAME || true
-    sudo docker rm $CONTAINER_NAME || true
-    sudo fuser -k $PORT/tcp || true
-    
-    echo ">Starting new container..."
-    sudo docker run -d \
-        -p $PORT:$PORT \
-        --name $CONTAINER_NAME \
-        --restart unless-stopped \
-        -e DEPLOY_REF=$RELEASE_HASH \
-        $IMAGE
-    
-    sleep 4
-    
-    if sudo docker ps | grep -q $CONTAINER_NAME; then
-        echo "Deployment completed successfully"
-    else
-        echo "ERROR: Application failed to start"
-        sudo docker logs $CONTAINER_NAME
-        exit 1
-    fi
-EOF
+echo "🔨 Building image locally..."
+docker build --build-arg COMMIT_SHA=$COMMIT_SHA -t $IMAGE .
+
+echo "🧹 Safely cleaning port 8181..."
+docker rm -f lab3-app 2>/dev/null || true
+sudo systemctl stop catty-app 2>/dev/null || true
+sudo pkill -f uvicorn || true
+
+echo "🚀 Starting container..."
+docker run -d --name lab3-app --restart always -p 8181:8181 \
+  -v /home/vboxuser/catty-reminders-app/config.json:/app/config.json \
+  --env-file .env $IMAGE
+
+echo "🔌 Restarting tunnel..."
+sudo systemctl restart frpc
+
+echo "✅ Success!"
