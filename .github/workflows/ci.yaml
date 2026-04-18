@@ -1,9 +1,9 @@
 name: CI Pipeline
 on:
   push:
-    branches:[ "lab3*" ]
-  pull_request:
     branches: [ "lab3*" ]
+  pull_request:
+    branches:[ "lab3*" ]
 
 permissions:
   contents: read
@@ -18,7 +18,8 @@ jobs:
         env:
           MYSQL_ROOT_PASSWORD: password
           MYSQL_DATABASE: reminders
-        ports:[3306:3306]
+        ports:
+          - 3306:3306
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -32,14 +33,12 @@ jobs:
         run: pip install -r requirements.txt pytest mysql-connector-python
 
       - name: Inject Bot User
-        # Вшиваем пользователя бота прямо в конфиг перед сборкой образа!
         run: python -c "import json; d=json.load(open('config.json')); d.setdefault('users', {})['sa3000udp']='password'; json.dump(d, open('config.json','w'))"
 
       - name: Run Tests
         run: |
           export PYTHONPATH=.
           export DATABASE_URL=mysql+mysqlconnector://root:password@127.0.0.1:3306/reminders
-          # Запускаем тесты, но "|| true" не дает CI упасть при ошибке
           pytest tests/test_unit.py --junitxml=results.xml || true
 
       - name: Upload Test Results
