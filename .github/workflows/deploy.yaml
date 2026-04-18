@@ -1,26 +1,36 @@
-name: CD Pipeline
+name: Deploy
+
 on:
-  push:
-    branches: [ "lab3*" ]
   release:
-    types: [published, created]
+    types: [published]
 
 jobs:
   deploy:
     runs-on: ubuntu-latest
     steps:
-      - name: Deploy via SSH
-        uses: appleboy/ssh-action@master
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Get release commit hash
+        run: |
+          TAG=${{ github.event.release.tag_name }}
+          HASH=$(git rev-list -n 1 $TAG)
+          echo "RELEASE_HASH=$HASH" >> $GITHUB_ENV
+
+      - name: Setup SSH Agent
+        uses: webfactory/ssh-agent@v0.7.0
         with:
-          host: course.prafdin.ru
-          port: 2288
-          username: vboxuser
-          key: ${{ secrets.SSH_PRIVATE_KEY }}
-          script: |
-            cd /home/vboxuser/catty-reminders-app
-            git config --global --add safe.directory /home/vboxuser/catty-reminders-app
-            # Выкачиваем конкретный коммит, чтобы не было ошибки оторванной головы
-            git fetch origin ${{ github.sha }}
-            git checkout -f ${{ github.sha }}
-            chmod +x deploy.sh
-            ./deploy.sh ${{ github.sha }}
+          ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
+
+      - name: Deploy to server
+        env:
+          DEPLOY_HOST: course.prafdin.ru
+          DEPLOY_USER: vboxuser
+          DEPLOY_PORT: 2288
+          RELEASE_HASH: ${{ env.RELEASE_HASH }}
+          IMAGE_NAME: ghcr.io/${{ github.repository_owner }}/catty-reminders-app
+          DOCKER_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_ACTOR: ${{ github.actor }}
+        run: |
+          chmod +x deploy.sh
+          ./deploy.sh

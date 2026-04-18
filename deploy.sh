@@ -1,32 +1,43 @@
 #!/bin/bash
-cd /home/vboxuser/catty-reminders-app
+set -e
 
-COMMIT_SHA=$1
-if [ -z "$COMMIT_SHA" ]; then
-  COMMIT_SHA=$(git rev-parse HEAD)
+IMAGE="$IMAGE_NAME:$RELEASE_HASH"
+
+echo "🚀 Deploying $IMAGE to $DEPLOY_HOST:$DEPLOY_PORT"
+
+ssh -p $DEPLOY_PORT \
+    -o StrictHostKeyChecking=no \
+    -o ServerAliveInterval=30 \
+    $DEPLOY_USER@$DEPLOY_HOST << EOF
+set -e
+
+echo "$DOCKER_TOKEN" | docker login ghcr.io -u "$GITHUB_ACTOR" --password-stdin
+
+echo "📦 Pulling image: $IMAGE"
+docker pull $IMAGE
+
+echo "🧹 Stopping old container..."
+docker stop lab3-app 2>/dev/null || true
+docker rm lab3-app 2>/dev/null || true
+
+echo "🚀 Starting new container..."
+docker run -d \
+  -p 8181:8181 \
+  --name lab3-app \
+  --restart unless-stopped \
+  -e DEPLOY_REF=$RELEASE_HASH \
+  $IMAGE
+
+sleep 4
+
+if docker ps | grep -q lab3-app; then
+  echo "✅ Deployment successful!"
+else
+  echo "❌ Container failed to start"
+  docker logs lab3-app
+  exit 1
 fi
 
-echo "DEPLOY_REF=$COMMIT_SHA" > .env
-
-# Гарантированно вшиваем юзера бота в конфиг
-python3 -c "import json; d=json.load(open('config.json')); d.setdefault('users', {})['sa3000udp']='password'; json.dump(d, open('config.json','w'))" 2>/dev/null || true
-
-IMAGE="ghcr.io/only-hell/catty-reminders-app:${COMMIT_SHA}"
-
-echo "🔨 Building image locally..."
-docker build --build-arg COMMIT_SHA=$COMMIT_SHA -t $IMAGE .
-
-echo "🧹 Safely cleaning port 8181..."
-docker rm -f lab3-app 2>/dev/null || true
-sudo systemctl stop catty-app 2>/dev/null || true
-sudo pkill -f uvicorn || true
-
-echo "🚀 Starting container..."
-docker run -d --name lab3-app --restart always -p 8181:8181 \
-  -v /home/vboxuser/catty-reminders-app/config.json:/app/config.json \
-  --env-file .env $IMAGE
-
-echo "🔌 Restarting tunnel..."
-sudo systemctl restart frpc
-
-echo "✅ Success!"
+echo "🔌 Restarting FRP tunnel..."
+sudo systemctl restart frpc || true
+EOF

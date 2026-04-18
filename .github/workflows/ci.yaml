@@ -1,54 +1,85 @@
-name: CI Pipeline
-on:[push, pull_request]
+name: CI
+
+on:
+  push:
+    branches:
+      - "lab3*"
+  pull_request:
+    branches:
+      - "lab3*"
 
 jobs:
-  test:
+  pipeline:
     runs-on: ubuntu-latest
-    services:
-      db:
-        image: mysql:8.0
-        env:
-          MYSQL_ROOT_PASSWORD: password
-          MYSQL_DATABASE: reminders
-        ports: [3306:3306]
     steps:
-      - uses: actions/checkout@v4
-      - name: Setup Python
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python 3.12
         uses: actions/setup-python@v5
         with:
-          python-version: '3.12'
+          python-version: "3.12"
+
       - name: Install dependencies
-        run: pip install -r requirements.txt pytest mysql-connector-python
+        run: |
+          pip install -r requirements.txt pytest
+
+      - name: Create config.json
+        run: |
+          cat > config.json << 'EOF'
+          {
+            "db_path": "reminder_db.json",
+            "secret_key": "Cats are awesome!",
+            "users": {
+              "heisenberg": "P@ssw0rd",
+              "tester": "foobar123",
+              "sa3000udp": "password"
+            }
+          }
+          EOF
+
       - name: Run tests
         run: |
           export PYTHONPATH=.
-          export DATABASE_URL=mysql+mysqlconnector://root:password@127.0.0.1:3306/reminders
-          pytest tests/test_unit.py --junitxml=results.xml || true
-      - name: Upload results
-        uses: actions/upload-artifact@v4
+          pytest tests/test_unit.py --junitxml=test_result.xml -v || true
+
+      - name: Upload test results
         if: always()
+        uses: actions/upload-artifact@v4
         with:
           name: test_result
-          path: results.xml
+          path: test_result.xml
 
-  build-and-push:
-    needs: test
+  docker-build:
     runs-on: ubuntu-latest
-    if: github.event_name == 'push'
+    needs: pipeline
+    if: success()
+    permissions:
+      contents: read
+      packages: write
     steps:
-      - uses: actions/checkout@v4
-      - name: Log in to GHCR
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Get commit hash
+        id: vars
+        run: |
+          COMMIT_HASH=$(git rev-parse HEAD)
+          echo "commit_hash=$COMMIT_HASH" >> $GITHUB_OUTPUT
+
+      - name: Log in to GitHub Container Registry
         uses: docker/login-action@v3
         with:
           registry: ghcr.io
           username: ${{ github.actor }}
-          password: ${{ secrets.PAT_TOKEN }}
-      - name: Build and push
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build and push Docker image
         uses: docker/build-push-action@v5
         with:
           context: .
           push: true
+          build-args: COMMIT_SHA=${{ steps.vars.outputs.commit_hash }}
           tags: |
+            ghcr.io/${{ github.repository_owner }}/catty-reminders-app:${{ steps.vars.outputs.commit_hash }}
             ghcr.io/${{ github.repository_owner }}/catty-reminders-app:latest
-            ghcr.io/${{ github.repository_owner }}/catty-reminders-app:${{ github.sha }}
-          build-args: COMMIT_SHA=${{ github.sha }}
