@@ -1,9 +1,7 @@
 name: CD Pipeline
 on:
-  push:
-    branches: [ "lab3*" ]
   release:
-    types: [published, created]
+    types: [published]
 
 jobs:
   deploy:
@@ -17,19 +15,18 @@ jobs:
           username: vboxuser
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           script: |
-            IMAGE="ghcr.io/only-hell/catty-reminders-app:${{ github.sha }}"
+            IMAGE="ghcr.io/${{ github.repository_owner }}/catty-reminders-app:${{ github.sha }}"
             
-            echo "🔐 Login to GHCR..."
+            echo "🔑 Logging in to GHCR..."
             echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
             
-            echo "📦 Pulling image..."
+            echo "📥 Pulling image..."
             docker pull $IMAGE
             
-            echo "🧹 Cleaning up port 8181..."
-            docker rm -f lab3-app 2>/dev/null || true
+            echo "🧹 Stopping old container..."
+            docker rm -f lab3-app catty-app 2>/dev/null || true
             sudo fuser -k 8181/tcp 2>/dev/null || true
             
-            echo "🚀 Starting container..."
+            echo "🚀 Starting new container..."
+            # Нам больше не нужно пробрасывать -v config.json, бот уже внутри образа!
             docker run -d --name lab3-app --restart always -p 8181:8181 -e DEPLOY_REF=${{ github.sha }} $IMAGE
-            
-            echo "✅ Deployment complete!"

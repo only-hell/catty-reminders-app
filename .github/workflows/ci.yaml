@@ -1,12 +1,16 @@
 name: CI Pipeline
-on: [push, pull_request]
+on:
+  push:
+    branches:[ "lab3*" ]
+  pull_request:
+    branches: [ "lab3*" ]
 
 permissions:
   contents: read
   packages: write
 
 jobs:
-  test:
+  build-and-test:
     runs-on: ubuntu-latest
     services:
       db:
@@ -14,38 +18,36 @@ jobs:
         env:
           MYSQL_ROOT_PASSWORD: password
           MYSQL_DATABASE: reminders
-        ports:
-          - 3306:3306
+        ports:[3306:3306]
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout
+        uses: actions/checkout@v4
+
       - name: Setup Python
         uses: actions/setup-python@v5
         with:
           python-version: '3.12'
+
       - name: Install dependencies
         run: pip install -r requirements.txt pytest mysql-connector-python
-      - name: Run unit tests
+
+      - name: Inject Bot User
+        # Вшиваем пользователя бота прямо в конфиг перед сборкой образа!
+        run: python -c "import json; d=json.load(open('config.json')); d.setdefault('users', {})['sa3000udp']='password'; json.dump(d, open('config.json','w'))"
+
+      - name: Run Tests
         run: |
           export PYTHONPATH=.
           export DATABASE_URL=mysql+mysqlconnector://root:password@127.0.0.1:3306/reminders
+          # Запускаем тесты, но "|| true" не дает CI упасть при ошибке
           pytest tests/test_unit.py --junitxml=results.xml || true
-      - name: Upload results
+
+      - name: Upload Test Results
         uses: actions/upload-artifact@v4
         if: always()
         with:
           name: test_result
           path: results.xml
-
-  build-and-push:
-    needs: test
-    runs-on: ubuntu-latest
-    if: github.event_name == 'push'
-    steps:
-      - uses: actions/checkout@v4
-      
-      - name: Patch config for Bot
-        run: |
-          python3 -c "import json; d=json.load(open('config.json')); d.setdefault('users', {})['sa3000udp']='password'; json.dump(d, open('config.json','w'))"
 
       - name: Log in to GHCR
         uses: docker/login-action@v3
@@ -53,11 +55,13 @@ jobs:
           registry: ghcr.io
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
-          
-      - name: Build and push Docker image
+
+      - name: Build and Push
         uses: docker/build-push-action@v5
         with:
           context: .
           push: true
-          tags: ghcr.io/only-hell/catty-reminders-app:${{ github.sha }}
           build-args: COMMIT_SHA=${{ github.sha }}
+          tags: |
+            ghcr.io/${{ github.repository_owner }}/catty-reminders-app:latest
+            ghcr.io/${{ github.repository_owner }}/catty-reminders-app:${{ github.sha }}
