@@ -38,6 +38,4 @@ else
   exit 1
 fi
 
-echo "🔌 Restarting FRP tunnel..."
-sudo systemctl restart frpc || true
 EOF
