@@ -31,5 +31,5 @@ jobs:
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           script: |
             cd /home/vboxuser/catty-reminders-app
-            export DEPLOY_REF=${{ github.sha }}
+            echo "DEPLOY_REF=${{ github.sha }}" > .env
             sudo systemctl restart catty-app.service
