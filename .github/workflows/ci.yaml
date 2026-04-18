@@ -3,7 +3,7 @@ on:
   push:
     branches: [ "lab3*" ]
   pull_request:
-    branches:[ "lab3*" ]
+    branches: [ "lab3*" ]
 
 permissions:
   contents: read
