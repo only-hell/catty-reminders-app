@@ -1,66 +1,73 @@
-name: CI Pipeline
+name: CI
 on:
   push:
-    branches: [ "lab3*" ]
+    branches:
+      - lab3*
   pull_request:
-    branches: [ "lab3*" ]
-
-permissions:
-  contents: read
-  packages: write
-
+    branches:
+      - lab3*
 jobs:
-  build-and-test:
+  pipeline:
     runs-on: ubuntu-latest
-    services:
-      db:
-        image: mysql:8.0
-        env:
-          MYSQL_ROOT_PASSWORD: password
-          MYSQL_DATABASE: reminders
-        ports:
-          - 3306:3306
     steps:
-      - name: Checkout
+      - name: Checkout repository
         uses: actions/checkout@v4
-
-      - name: Setup Python
+      - name: Set up Python 3.12
         uses: actions/setup-python@v5
         with:
-          python-version: '3.12'
-
+          python-version: "3.12"
       - name: Install dependencies
-        run: pip install -r requirements.txt pytest mysql-connector-python
-
-      - name: Inject Bot User
-        run: python -c "import json; d=json.load(open('config.json')); d.setdefault('users', {})['sa3000udp']='password'; json.dump(d, open('config.json','w'))"
-
-      - name: Run Tests
         run: |
-          export PYTHONPATH=.
-          export DATABASE_URL=mysql+mysqlconnector://root:password@127.0.0.1:3306/reminders
-          pytest tests/test_unit.py --junitxml=results.xml || true
-
-      - name: Upload Test Results
-        uses: actions/upload-artifact@v4
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          playwright install --with-deps chromium
+      - name: Start app
+        run: |
+          nohup uvicorn app.main:app --host 127.0.0.1 --port 8181 &
+          sleep 4
+      - name: Run tests
+        env:
+          PYTHONPATH: ${{ github.workspace }}
+        run: pytest --junitxml=test_result.xml
+      - name: Upload test results
         if: always()
+        uses: actions/upload-artifact@v4
         with:
           name: test_result
-          path: results.xml
-
-      - name: Log in to GHCR
-        uses: docker/login-action@v3
+          path: test_result.xml
+  docker-build:
+    runs-on: ubuntu-latest
+    needs: pipeline
+    if: success()
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+      - name: Get commit hash
+        id: vars
+        run: |
+          COMMIT_HASH=$(git rev-parse HEAD)
+          echo "commit_hash=$COMMIT_HASH" >> $GITHUB_OUTPUT
+          echo "Image tag: $COMMIT_HASH"
+      - name: Log in to GitHub Container Registry
+        uses: docker/login-action@v4
         with:
           registry: ghcr.io
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Build and Push
-        uses: docker/build-push-action@v5
+      - name: Docker meta
+        id: meta
+        uses: docker/metadata-action@v6
+        with:
+          images: ghcr.io/${{ github.repository_owner }}/${{ github.event.repository.name }}
+          tags: |
+            type=raw,value=${{ steps.vars.outputs.commit_hash }}
+      - name: Build and push
+        uses: docker/build-push-action@v7
         with:
           context: .
           push: true
-          build-args: COMMIT_SHA=${{ github.sha }}
-          tags: |
-            ghcr.io/${{ github.repository_owner }}/catty-reminders-app:latest
-            ghcr.io/${{ github.repository_owner }}/catty-reminders-app:${{ github.sha }}
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}

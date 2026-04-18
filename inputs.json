@@ -1,7 +1,6 @@
 {
-  "base_url": "http://localhost:8181",
-
-  "users": [
+  "base_url": "http://127.0.0.1:8181",
+  "users":[
     {
       "username": "heisenberg",
       "password": "P@ssw0rd"

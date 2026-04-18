@@ -1,32 +1,38 @@
-name: CD Pipeline
+name: Deploy
 on:
   release:
     types: [published]
-
 jobs:
   deploy:
     runs-on: ubuntu-latest
     steps:
-      - name: Deploy via SSH
-        uses: appleboy/ssh-action@master
-        with:
-          host: course.prafdin.ru
-          port: 2288
-          username: vboxuser
-          key: ${{ secrets.SSH_PRIVATE_KEY }}
-          script: |
-            IMAGE="ghcr.io/${{ github.repository_owner }}/catty-reminders-app:${{ github.sha }}"
-            
-            echo "🔑 Logging in to GHCR..."
-            echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
-            
-            echo "📥 Pulling image..."
-            docker pull $IMAGE
-            
-            echo "🧹 Stopping old container..."
-            docker rm -f lab3-app catty-app 2>/dev/null || true
-            sudo fuser -k 8181/tcp 2>/dev/null || true
-            
-            echo "🚀 Starting new container..."
-            # Нам больше не нужно пробрасывать -v config.json, бот уже внутри образа!
-            docker run -d --name lab3-app --restart always -p 8181:8181 -e DEPLOY_REF=${{ github.sha }} $IMAGE
+    - name: Checkout repository
+      uses: actions/checkout@v4
+    
+    - name: Get release commit hash
+      run: |
+        TAG=${{ github.event.release.tag_name }}
+        HASH=$(git rev-list -n 1 $TAG)
+        echo "RELEASE_TAG=$TAG" >> $GITHUB_ENV
+        echo "RELEASE_HASH=$HASH" >> $GITHUB_ENV
+        echo "Deploying release: $TAG"
+        echo "Commit hash: $HASH"
+        echo "Image: ghcr.io/${{ github.repository_owner }}/${{ github.event.repository.name }}:$HASH"
+    
+    - name: Setup SSH Agent
+      uses: webfactory/ssh-agent@v0.7.0
+      with:
+        ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
+    
+    - name: Deploy to server
+      env:
+        DEPLOY_HOST: course.prafdin.ru
+        DEPLOY_USER: vboxuser
+        DEPLOY_PORT: 2288
+        RELEASE_HASH: ${{ env.RELEASE_HASH }}
+        IMAGE_NAME: ghcr.io/${{ github.repository_owner }}/${{ github.event.repository.name }}
+        DOCKER_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        GITHUB_ACTOR: ${{ github.actor }}
+      run: |
+        chmod +x scripts/deploy.sh
+        ./scripts/deploy.sh

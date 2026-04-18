@@ -1,9 +1,10 @@
-FROM python:3.12-slim
-WORKDIR /app
+FROM python:3.12
+WORKDIR /catty-reminders-app
 COPY requirements.txt .
-RUN pip install --no-cache-dir -r requirements.txt
-COPY . .
+RUN pip install -r requirements.txt
+COPY app/ ./app/
+COPY static/ ./static/
+COPY templates/ ./templates/
+COPY config.json .
 EXPOSE 8181
-ARG COMMIT_SHA
-RUN echo ${COMMIT_SHA} > .commit_hash
-CMD ["python", "-m", "uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8181"]
+CMD["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8181"]
