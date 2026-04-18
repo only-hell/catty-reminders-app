@@ -1,0 +1,53 @@
+name: Continuous Integration
+
+on:
+  push:
+    branches: [ "lab3*" ]
+  pull_request:
+    branches: [ "lab3*" ]
+
+jobs:
+  code-quality-and-tests:
+    runs-on: ubuntu-latest
+    
+    services:
+      mysql-db:
+        image: mysql:8.0
+        env:
+          MYSQL_ROOT_PASSWORD: password
+          MYSQL_DATABASE: reminders
+        ports:
+          - 3306:3306
+
+    steps:
+      - name: Source Checkout
+        uses: actions/checkout@v4
+
+      - name: Python Environment Setup
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Dependency Installation
+        run: pip install -r requirements.txt pytest mysql-connector-python
+
+      - name: Execution of Unit Tests
+        env:
+          PYTHONPATH: .
+          DATABASE_URL: mysql+mysqlconnector://root:password@127.0.0.1:3306/reminders
+        run: pytest tests/test_unit.py --junitxml=results.xml
+
+      - name: Test Report Archiving
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: test_result
+          path: results.xml
+
+  docker-build-verification:
+    needs: code-quality-and-tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Dockerfile Lint/Build
+        run: docker build .
