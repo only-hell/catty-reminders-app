@@ -1,3 +1,5 @@
 __pycache__/
 .commit_hash
 .env
+venv/
+inputs.json
