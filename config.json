@@ -1,13 +1,11 @@
 {
-  "db_path": "reminder_db.json",
   "secret_key": "Cats are awesome!",
   "users": {
     "heisenberg": "P@ssw0rd",
-    "tester": "foobar123",
-    "sa3000udp": "sa3000udp"
+    "tester": "foobar123"
   },
   "db_config": {
-    "host": "db",
+    "host": "localhost",
     "port": 3306,
     "user": "root",
     "password": "mypass",
