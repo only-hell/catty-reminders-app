@@ -2,7 +2,7 @@ name: Deploy
 
 on:
   push:
-    branches: [ main ]
+    branches: [ lab4-clean ]
 
 jobs:
   deploy:
@@ -15,5 +15,4 @@ jobs:
       - name: Deploy app
         run: |
           cd ~/catty-reminders-app
-          git pull origin main
-          bash deploy.sh
+          bash deploy.sh lab4-clean
