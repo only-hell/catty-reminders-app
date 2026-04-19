@@ -1,10 +1,14 @@
 FROM python:3.11-slim
 
-WORKDIR /catty
+WORKDIR /app
 
-COPY . .
+COPY requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
 
-RUN pip install -r requirements.txt
+# Копируем исходный код
+COPY app/ ./app/
+COPY static/ ./static/
+COPY templates/ ./templates/
 
 ARG COMMIT_SHA=manual-test
 ENV DEPLOY_REF=$COMMIT_SHA

@@ -1,25 +1,43 @@
 services:
   db:
-    image: postgres:14
+    image: mariadb:11
+    container_name: ${DB_CONTAINER_NAME:-catty-db}
     restart: always
     environment:
-      POSTGRES_USER: user
-      POSTGRES_PASSWORD: password
-      POSTGRES_DB: reminders
+      MARIADB_ROOT_PASSWORD: ${MARIADB_ROOT_PASSWORD:-mypass}
+      MARIADB_DATABASE: ${MARIADB_DATABASE:-catty_reminders}
+    ports:
+      - "${HOST_DB_PORT:-3306}:${CONTEINER_DB_PORT:-3306}"
     volumes:
-      - db_data:/var/lib/postgresql/data
+      - db_data:/var/lib/mysql
+    networks:
+      - catty-network
+    healthcheck:
+      test: ["CMD", "healthcheck.sh", "--connect", "--innodb_initialized"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
 
   app:
-    image: ghcr.io/only-hell/catty-reminders-app:${IMAGE_TAG:-lab4}
+    build: .
+    image: ${IMAGE:-catty-app:latest}
+    container_name: ${APP_CONTAINER_NAME:-catty-app}
     restart: always
-    ports:
-      - "8181:8181"
     environment:
-      - DATABASE_URL=postgresql://user:password@db:5432/reminders
-      - DEPLOY_REF=${IMAGE_TAG}
+      - DEPLOY_REF=${DEPLOY_REF:-unknown}
+    ports: 
+      - "${HOST_APP_PORT:-8181}:${CONTEINER_APP_PORT:-8181}"
+    volumes:
+      - ./config.json:/app/config.json:ro
     depends_on:
-      - db
+      db:
+        condition: service_healthy
+    networks:
+      - catty-network
+
+networks:
+  catty-network:
+    driver: bridge
 
 volumes:
   db_data:
-# Production-ready compose for Lab 4
