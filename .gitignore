@@ -5,3 +5,6 @@ __pycache__/
 .env
 *.log
 .pytest_cache/
+
+# GitHub Actions Runner (не должен быть в репо)
+actions-runner/
