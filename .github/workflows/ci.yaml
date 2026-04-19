@@ -69,5 +69,6 @@ jobs:
           tags: |
             ghcr.io/only-hell/catty-reminders-app:${{ github.sha }}
             ghcr.io/only-hell/catty-reminders-app:latest
+            ghcr.io/only-hell/catty-reminders-app:lab4
           build-args: |
             DEPLOY_REF=${{ github.sha }}
