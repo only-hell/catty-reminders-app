@@ -41,6 +41,17 @@ jobs:
           pip install pytest pytest-playwright
           playwright install chromium
 
+      - name: Update config for CI (localhost)
+        run: |
+          python3 -c "
+          import json
+          with open('config.json') as f:
+              cfg = json.load(f)
+          cfg['db_config']['host'] = 'localhost'
+          with open('config.json', 'w') as f:
+              json.dump(cfg, f, indent=2)
+          "
+
       - name: Start FastAPI server
         env:
           PYTHONPATH: ${{ github.workspace }}
