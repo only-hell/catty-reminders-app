@@ -12,12 +12,14 @@ services:
       interval: 10s
       timeout: 5s
       retries: 10
+    networks:
+      - catty-network
 
   app:
-    image: ${IMAGE:-ghcr.io/only-hell/catty-reminders-app:latest}
+    image: ghcr.io/only-hell/catty-reminders-app:latest
     restart: always
     environment:
-      - DEPLOY_REF=${DEPLOY_REF:-NA}
+      - DEPLOY_REF=manual-test
     ports:
       - "8181:8181"
     volumes:
@@ -25,6 +27,12 @@ services:
     depends_on:
       db:
         condition: service_healthy
+    networks:
+      - catty-network
+
+networks:
+  catty-network:
+    driver: bridge
 
 volumes:
   db_data:
