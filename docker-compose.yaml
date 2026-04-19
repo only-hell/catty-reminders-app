@@ -11,13 +11,17 @@ services:
       test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-pmypass"]
       interval: 10s
       timeout: 5s
-      retries: 5
+      retries: 10
 
   app:
-    image: ghcr.io/only-hell/catty-reminders-app:${IMAGE_TAG:-lab4}
+    image: ${IMAGE:-ghcr.io/only-hell/catty-reminders-app:latest}
     restart: always
+    environment:
+      - DEPLOY_REF=${DEPLOY_REF:-NA}
     ports:
       - "8181:8181"
+    volumes:
+      - ./config.json:/app/config.json:ro
     depends_on:
       db:
         condition: service_healthy
