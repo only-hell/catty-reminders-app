@@ -1,28 +1,19 @@
 name: Deploy
+
 on:
   push:
     branches: [ main ]
 
 jobs:
   deploy:
-    runs-on: self-hosted  # ← вот главное изменение!
-    
+    runs-on: self-hosted
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v3
 
-      - name: Setup Node.js
-        uses: actions/setup-node@v3
-        with:
-          node-version: '18'
-
-      - name: Install dependencies
+      - name: Deploy app
         run: |
           cd ~/catty-reminders-app
-          npm install
-
-      - name: Restart app
-        run: |
-          cd ~/catty-reminders-app
-          pm2 restart catty-app || pm2 start index.js --name catty-app
-          pm2 save
+          git pull origin main
+          bash deploy.sh
