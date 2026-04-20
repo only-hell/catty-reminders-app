@@ -1,18 +1,15 @@
 #!/bin/bash
 set -e
 
-# Берем SHA коммита
 COMMIT_SHA=${1:-$(git rev-parse HEAD)}
 export DEPLOY_REF=$COMMIT_SHA
+export IMAGE=ghcr.io/only-hell/catty-reminders-app:$COMMIT_SHA
 
-echo "🚀 Deploying Lab 4 with SHA: $DEPLOY_REF"
+echo "🚀 Deploying with SHA: $DEPLOY_REF"
+echo "📦 Image: $IMAGE"
 
-# Чистим порт и старье
-sudo fuser -k 8181/tcp || true
 docker compose down || true
-
-# Собираем и поднимаем
-docker compose build
+docker compose pull
 docker compose up -d
 
 echo "⏳ Waiting for app startup..."
