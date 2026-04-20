@@ -12,8 +12,9 @@ cd ~/catty-reminders-app
 # Останавливаем и удаляем старые контейнеры
 docker compose down --remove-orphans
 
-# Обновляем IMAGE в .env
-export IMAGE=$IMAGE
+# Обновляем IMAGE и DEPLOY_REF в .env
+sed -i "s|^IMAGE=.*|IMAGE=$IMAGE|" .env
+sed -i "s|^DEPLOY_REF=.*|DEPLOY_REF=$SHA|" .env
 
 # Запускаем новые контейнеры
 docker compose up -d --pull always
