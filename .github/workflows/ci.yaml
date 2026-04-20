@@ -24,12 +24,19 @@ jobs:
 
     services:
       db:
-        image: mariadb:11.8.6-ubi9
+        image: mariadb:11
         env:
-          MARIADB_ROOT_PASSWORD: ${{ secrets.MARIADB_ROOT_PASSWORD }}
+          MARIADB_ROOT_PASSWORD: rootpass123
           MARIADB_DATABASE: catty_reminders
+          MARIADB_USER: catty
+          MARIADB_PASSWORD: mypass
         ports:
           - 3306:3306
+        options: >-
+          --health-cmd="healthcheck.sh --connect --innodb_initialized"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=5
 
     steps:
       - name: Checkout repository
@@ -47,7 +54,17 @@ jobs:
           pip install uvicorn pytest-playwright
           playwright install --with-deps chromium
 
+      - name: Wait for DB
+        run: |
+          for i in {1..30}; do
+            mysqladmin ping -h 127.0.0.1 -u catty -pmypass --silent && break
+            echo "Waiting for DB... $i"
+            sleep 2
+          done
+
       - name: Start app
+        env:
+          DEPLOY_REF: ${{ github.sha }}
         run: |
           nohup uvicorn app.main:app --host 127.0.0.1 --port 8181 &
           sleep 5
