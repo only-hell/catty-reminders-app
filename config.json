@@ -2,11 +2,10 @@
   "secret_key": "Cats are awesome!",
   "users": {
     "heisenberg": "P@ssw0rd",
-    "tester": "foobar123",
-    "sa3000udp": "password"
+    "tester": "foobar123"
   },
   "db_config": {
-    "host": "db",
+    "host": "localhost",
     "port": 3306,
     "user": "root",
     "password": "mypass",
