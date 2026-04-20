@@ -21,6 +21,7 @@ services:
     restart: always
     environment:
       - DEPLOY_REF=${DEPLOY_REF}
+      - DB_HOST=catty-db
     ports:
       - "${HOST_APP_PORT}:${CONTEINER_APP_PORT}"
     volumes:
