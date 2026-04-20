@@ -24,7 +24,7 @@ services:
     ports:
       - "${HOST_APP_PORT}:${CONTEINER_APP_PORT}"
     volumes:
-      - ./config.json:/catty-reminders-app/config.json:ro
+      - ./config.json:/catty/config.json:ro
     depends_on:
       - db
     networks:
