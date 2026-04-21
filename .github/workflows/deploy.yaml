@@ -12,8 +12,8 @@ jobs:
     steps:
       - name: Execute deployment script
         env:
-          GHCR_TOKEN: ${{ secrets.GHCR_PAT }}
-          GHCR_USER: only-hell
+          GHCR_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GHCR_USER: ${{ github.event.workflow_run.head_repository.owner.login }}
         run: |
           chmod +x ~/catty-reminders-app/deploy.sh
           ~/catty-reminders-app/deploy.sh ${{ github.event.workflow_run.head_sha }}
