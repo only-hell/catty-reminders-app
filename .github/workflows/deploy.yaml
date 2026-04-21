@@ -16,6 +16,9 @@ jobs:
           ref: ${{ github.event.workflow_run.head_sha }}
 
       - name: Execute deployment script
+        env:
+          GHCR_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GHCR_USER: ${{ github.actor }}
         run: |
           chmod +x ./deploy.sh
           ./deploy.sh ${{ github.event.workflow_run.head_sha }}
