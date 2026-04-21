@@ -22,8 +22,11 @@ echo "${GHCR_TOKEN}" | docker login ghcr.io -u "${GHCR_USER}" --password-stdin
 sed -i "s|^IMAGE=.*|IMAGE=${IMAGE}|" .env
 sed -i "s|^DEPLOY_REF=.*|DEPLOY_REF=${DEPLOY_SHA}|" .env
 
+# Пулим образ явно после логина
+docker pull "${IMAGE}"
+
 # Останавливаем старые контейнеры
 docker compose down --remove-orphans
 
 # Запускаем новые контейнеры
-docker compose up -d --pull always
+docker compose up -d
