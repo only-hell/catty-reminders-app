@@ -21,12 +21,47 @@ jobs:
       - name: Dependency Installation
         run: |
           pip install -r requirements.txt
-          pip install pytest
+          pip install pytest pylint
+
+      - name: Install Playwright Browsers
+        run: playwright install --with-deps chromium
+
+      - name: Lint with pylint
+        continue-on-error: true
+        run: pylint app/ --exit-zero
+
+      - name: Start application in background
+        env:
+          PYTHONPATH: .
+        run: |
+          nohup uvicorn app.main:app --host 127.0.0.1 --port 8181 > uvicorn.log 2>&1 &
+          echo $! > uvicorn.pid
+          for i in {1..30}; do
+            if curl -sf http://127.0.0.1:8181/login > /dev/null; then
+              echo "Server is up after $i seconds"
+              exit 0
+            fi
+            sleep 1
+          done
+          echo "Server failed to start"
+          cat uvicorn.log
+          exit 1
 
       - name: Execution of Tests
         env:
           PYTHONPATH: .
         run: pytest tests/ --junitxml=results.xml
+
+      - name: Show uvicorn logs on failure
+        if: failure()
+        run: cat uvicorn.log
+
+      - name: Stop application
+        if: always()
+        run: |
+          if [ -f uvicorn.pid ]; then
+            kill $(cat uvicorn.pid) || true
+          fi
 
       - name: Test Report Archiving
         uses: actions/upload-artifact@v4
