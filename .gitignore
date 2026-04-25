@@ -1,2 +1,30 @@
+# Python
 __pycache__/
-.commit_hash
+*.py[cod]
+*.egg-info/
+.pytest_cache/
+
+# Virtual env
+venv/
+.venv/
+env/
+
+# IDE
+.idea/
+.vscode/
+
+# OS
+.DS_Store
+
+# Secrets / runtime
+.env
+reminder_db.json
+
+# Self-hosted runner
+actions-runner/
+
+# Test artifacts
+test_result.xml
+test_result.html
+playwright-report/
+test-results/
