@@ -3,19 +3,35 @@ name: Deploy
 on:
   release:
     types: [published]
+  workflow_run:
+    workflows: ["Continuous Integration"]
+    types:
+      - completed
+    branches: [ "lab3*" ]
 
 jobs:
   deploy:
     runs-on: ubuntu-latest
+    # деплоим только если CI прошёл (для workflow_run) либо если это релиз
+    if: ${{ github.event_name == 'release' || github.event.workflow_run.conclusion == 'success' }}
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-
-      - name: Get release commit hash
+      - name: Determine commit SHA
+        id: sha
         run: |
-          TAG=${{ github.event.release.tag_name }}
-          HASH=$(git rev-list -n 1 $TAG)
-          echo "RELEASE_HASH=$HASH" >> $GITHUB_ENV
+          if [ "${{ github.event_name }}" = "release" ]; then
+            # SHA коммита, на который указывает тэг релиза
+            SHA="${{ github.event.release.target_commitish }}"
+            # target_commitish может быть именем ветки — резолвим в реальный SHA через API
+            if ! [[ "$SHA" =~ ^[0-9a-f]{40}$ ]]; then
+              SHA=$(curl -s -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" \
+                    "https://api.github.com/repos/${{ github.repository }}/commits/$SHA" \
+                    | grep -m1 '"sha"' | head -n1 | cut -d'"' -f4)
+            fi
+          else
+            SHA="${{ github.event.workflow_run.head_sha }}"
+          fi
+          echo "Resolved SHA: $SHA"
+          echo "sha=$SHA" >> $GITHUB_OUTPUT
 
       - name: Setup SSH Agent
         uses: webfactory/ssh-agent@v0.7.0
@@ -24,10 +40,10 @@ jobs:
 
       - name: Deploy to server via SSH
         env:
-          RELEASE_HASH: ${{ env.RELEASE_HASH }}
+          SHA: ${{ steps.sha.outputs.sha }}
         run: |
           ssh -o StrictHostKeyChecking=no -p 2288 vboxuser@course.prafdin.ru \
             "cd /home/vboxuser/catty-reminders-app && \
              git fetch origin && \
-             git checkout ${RELEASE_HASH} && \
-             COMMIT_SHA=${RELEASE_HASH} bash deploy.sh ${RELEASE_HASH}"
+             git checkout ${SHA} && \
+             bash deploy.sh ghcr.io/only-hell/catty-reminders-app ${SHA}"
