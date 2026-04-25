@@ -1,46 +1,59 @@
-#!/bin/bash
+#!/usr/bin/env bash
 set -euo pipefail
 
-GIT_REF="${1:-lab2}"
+REF="${1:-}"
 APP_DIR="$HOME/catty-reminders-app"
+VENV="$APP_DIR/.venv"
 
-echo "==> Deploying ref: $GIT_REF"
 cd "$APP_DIR"
 
-echo "==> Fetching latest"
-git fetch --all --prune
-git fetch --tags --force
+echo "==> Fetch all refs"
+git fetch --all --tags --prune --force
 
-echo "==> Resolving $GIT_REF"
-if git show-ref --verify --quiet "refs/remotes/origin/$GIT_REF"; then
-  TARGET="origin/$GIT_REF"
-else
-  TARGET="$GIT_REF"
-fi
-echo "==> Target: $TARGET"
-
-echo "==> Checking out"
-git checkout -f "$TARGET"
-
-echo "==> Installing dependencies (venv)"
-if [ ! -d .venv ]; then
-  python3 -m venv .venv
-fi
-.venv/bin/pip install --upgrade pip
-.venv/bin/pip install -r requirements.txt
-
-echo "==> Restarting service"
-sudo systemctl restart catty-app
-
-echo "==> Waiting for app to come up"
-for i in $(seq 1 20); do
-  if curl -fsS http://127.0.0.1:8181/login > /dev/null; then
-    echo "==> Deploy successful"
-    exit 0
+if [ -n "$REF" ]; then
+  echo "==> Checkout ref: $REF"
+  if git rev-parse --verify "refs/tags/$REF" >/dev/null 2>&1; then
+    git checkout -f "refs/tags/$REF"
+  elif git rev-parse --verify "$REF" >/dev/null 2>&1; then
+    git checkout -f "$REF"
+  else
+    git checkout -f "origin/$REF"
   fi
-  sleep 1
+fi
+
+echo "==> Resolve deployed SHA"
+DEPLOY_SHA="$(git rev-parse HEAD)"
+echo "    HEAD = $DEPLOY_SHA"
+
+echo "==> Ensure venv"
+if [ ! -x "$VENV/bin/python" ]; then
+  python3 -m venv "$VENV"
+fi
+"$VENV/bin/pip" install --upgrade pip >/dev/null
+"$VENV/bin/pip" install -r requirements.txt
+
+echo "==> Write .env with DEPLOY_REF"
+echo "DEPLOY_REF=$DEPLOY_SHA" > "$APP_DIR/.env"
+
+echo "==> Restart service"
+sudo /usr/bin/systemctl restart catty-app
+
+echo "==> Healthcheck"
+for i in 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15; do
+  if curl -fsS http://127.0.0.1:8181/login >/dev/null; then
+    echo "    OK on try $i"
+    break
+  fi
+  echo "    waiting... ($i)"
+  sleep 2
 done
 
-echo "==> App did not respond after restart"
-sudo systemctl status catty-app --no-pager
-exit 1
+echo "==> Verify deployref in HTML"
+HTML_REF="$(curl -fsS http://127.0.0.1:8181/login | grep -oE 'name="deployref" content="[^"]+"' | sed -E 's/.*content="([^"]+)".*/\1/')"
+echo "    HTML deployref = $HTML_REF"
+if [ "$HTML_REF" != "$DEPLOY_SHA" ]; then
+  echo "ERROR: deployref mismatch (expected $DEPLOY_SHA, got $HTML_REF)" >&2
+  exit 1
+fi
+
+echo "==> Deploy OK"
