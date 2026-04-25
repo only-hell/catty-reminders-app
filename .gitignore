@@ -3,4 +3,6 @@ __pycache__/
 .env
 deploy.log
 results.xml
-.idea/
+.idea/actions-runner/
+.venv/
+venv/
