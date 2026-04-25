@@ -5,32 +5,37 @@ on:
     types: [published]
   workflow_run:
     workflows: ["Continuous Integration"]
-    types:
-      - completed
-    branches: [ "lab3*" ]
+    types: [completed]
+    branches: ["lab3*"]
 
 jobs:
   deploy:
     runs-on: ubuntu-latest
-    # деплоим только если CI прошёл (для workflow_run) либо если это релиз
     if: ${{ github.event_name == 'release' || github.event.workflow_run.conclusion == 'success' }}
     steps:
       - name: Determine commit SHA
         id: sha
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
+          set -e
           if [ "${{ github.event_name }}" = "release" ]; then
-            # SHA коммита, на который указывает тэг релиза
-            SHA="${{ github.event.release.target_commitish }}"
-            # target_commitish может быть именем ветки — резолвим в реальный SHA через API
-            if ! [[ "$SHA" =~ ^[0-9a-f]{40}$ ]]; then
-              SHA=$(curl -s -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" \
-                    "https://api.github.com/repos/${{ github.repository }}/commits/$SHA" \
-                    | grep -m1 '"sha"' | head -n1 | cut -d'"' -f4)
-            fi
+            TAG="${{ github.event.release.tag_name }}"
+            echo "Resolving tag: $TAG"
+            # Резолвим тэг → SHA коммита через API (тэг может быть annotated)
+            SHA=$(curl -fsSL \
+              -H "Authorization: Bearer $GH_TOKEN" \
+              -H "Accept: application/vnd.github+json" \
+              "https://api.github.com/repos/${{ github.repository }}/commits/$TAG" \
+              | python3 -c "import sys,json; print(json.load(sys.stdin)['sha'])")
           else
             SHA="${{ github.event.workflow_run.head_sha }}"
           fi
           echo "Resolved SHA: $SHA"
+          if ! [[ "$SHA" =~ ^[0-9a-f]{40}$ ]]; then
+            echo "ERROR: SHA is invalid: $SHA"
+            exit 1
+          fi
           echo "sha=$SHA" >> $GITHUB_OUTPUT
 
       - name: Setup SSH Agent
@@ -43,7 +48,10 @@ jobs:
           SHA: ${{ steps.sha.outputs.sha }}
         run: |
           ssh -o StrictHostKeyChecking=no -p 2288 vboxuser@course.prafdin.ru \
-            "cd /home/vboxuser/catty-reminders-app && \
+            "set -e; \
+             docker pull ghcr.io/only-hell/catty-reminders-app:${SHA} && \
+             cd /home/vboxuser/catty-reminders-app && \
              git fetch origin && \
-             git checkout ${SHA} && \
+             git checkout origin/lab3 -- deploy.sh && \
+             chmod +x deploy.sh && \
              bash deploy.sh ghcr.io/only-hell/catty-reminders-app ${SHA}"
