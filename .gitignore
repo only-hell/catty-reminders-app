@@ -1,9 +1,33 @@
+# Python
 __pycache__/
 *.pyc
-.env
-deploy.log
-results.xml
-.idea/actions-runner/
+*.pyo
+.pytest_cache/
 .venv/
 venv/
+
+# IDE
+.idea/
+.vscode/
+
+# Env
+.env
+.env.local
+
+# CI/CD artifacts
+cookies.txt
+test_result.xml
+results.xml
+uvicorn.log
+uvicorn.pid
+deploy.log
+
+# GitHub Actions self-hosted runner
 actions-runner/
+config.json
+inputs.json
+params.json
+schema-params.json
+
+# App data (legacy)
+reminder_db.json
