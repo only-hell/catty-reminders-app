@@ -1,24 +1,19 @@
-"""
-This module contains unit tests for the Catty app.
-"""
-
-# --------------------------------------------------------------------------------
-# Imports
-# --------------------------------------------------------------------------------
-
 from app.utils.auth import serialize_token, deserialize_token
-from testlib.inputs import User
 
+def test_serialize_token():
+    token = serialize_token("heisenberg")
+    assert token is not None
+    assert isinstance(token, str)
 
-# --------------------------------------------------------------------------------
-# Tests
-# --------------------------------------------------------------------------------
+def test_deserialize_token_valid():
+    token = serialize_token("heisenberg")
+    username = deserialize_token(token)
+    assert username == "heisenberg"
 
-def test_token_serialization(user: User):
-  token = serialize_token(user.username)
-  assert token
-  assert isinstance(token, str)
-  assert token != user.username
+def test_deserialize_token_invalid():
+    username = deserialize_token("invalid.token.here")
+    assert username is None
 
-  username = deserialize_token(token)
-  assert username == user.username
+def test_deserialize_token_empty():
+    username = deserialize_token("")
+    assert username is None

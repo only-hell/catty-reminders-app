@@ -1,0 +1,13 @@
+venv/
+.venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+.idea/
+actions-runner/
+cookies.txt
+*.log
+nohup.out
+config.json
+.env
+reminder_db.json
