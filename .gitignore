@@ -10,3 +10,4 @@ cookies.txt
 nohup.out
 config.json
 .env
+reminder_db.json

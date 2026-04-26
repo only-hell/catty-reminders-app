@@ -1,0 +1,15 @@
+{
+  "db_config": {
+    "host": "127.0.0.1",
+    "port": 3307,
+    "user": "catty",
+    "password": "changeme",
+    "database": "catty_db"
+  },
+  "secret_key": "Cats are awesome!",
+  "users": {
+    "heisenberg": "P@ssw0rd",
+    "tester": "foobar123",
+    "sa3000udp": "password"
+  }
+}
