@@ -4,9 +4,9 @@ on:
   push:
     branches:
       - main
+      - 'lab*'
+      - 'lab4-clean'
   pull_request:
-    branches:
-      - main
   release:
     types: [published, created]
   workflow_dispatch:
